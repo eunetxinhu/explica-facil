@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explica Fácil</title>
+<style>
+  :root{
+    --bg:#FBFAF8; --ink:#17150F; --muted:#6E6B62; --line:#E7E3DA;
+    --brand:#1E5FCC; --brand-soft:#E9F0FB; --error:#B5701A; --error-soft:#FAF1E2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,sans-serif;
+    display:flex; justify-content:center; padding:40px 16px;}
+  .card{width:100%; max-width:520px;}
+  h1{font-size:26px; margin:0 0 6px;}
+  p.sub{color:var(--muted); margin:0 0 24px; font-size:15px;}
+  .row{display:flex; gap:8px;}
+  input{flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:16px;}
+  button{padding:12px 18px; border:none; border-radius:10px; background:var(--brand); color:#fff;
+    font-size:15px; font-weight:600; cursor:pointer;}
+  button:disabled{opacity:.6; cursor:not-allowed;}
+  .resultado{margin-top:20px; padding:16px 18px; border-radius:12px; background:var(--brand-soft);
+    font-size:15.5px; line-height:1.6; white-space:pre-wrap; display:none;}
+  .erro{margin-top:20px; padding:16px 18px; border-radius:12px; background:var(--error-soft);
+    color:var(--error); font-size:15px; display:none;}
+  .carregando{margin-top:20px; font-size:14.5px; color:var(--muted); display:none;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Explica Fácil</h1>
+    <p class="sub">Digite um termo ou uma pergunta e receba uma explicação simples, gerada por IA.</p>
+
+    <div class="row">
+      <input id="termo" type="text" placeholder="Ex: o que é API?" />
+      <button id="btn">Explicar</button>
+    </div>
+
+    <div class="carregando" id="carregando">Pensando na explicação...</div>
+    <div class="erro" id="erro"></div>
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+<script>
+  // Troque pela URL do seu Worker publicado
+  const WORKER_URL = "https://SEU-WORKER.SEU-SUBDOMINIO.workers.dev";
+
+  const input = document.getElementById('termo');
+  const btn = document.getElementById('btn');
+  const carregando = document.getElementById('carregando');
+  const erroBox = document.getElementById('erro');
+  const resultadoBox = document.getElementById('resultado');
+
+  async function explicar(){
+    const termo = input.value.trim();
+    if(!termo) return;
+
+    erroBox.style.display = 'none';
+    resultadoBox.style.display = 'none';
+    carregando.style.display = 'block';
+    btn.disabled = true;
+
+    try{
+      const resp = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ termo })
+      });
+
+      if(!resp.ok){
+        throw new Error('Falha na resposta do servidor');
+      }
+
+      const dados = await resp.json();
+      resultadoBox.textContent = dados.explicacao;
+      resultadoBox.style.display = 'block';
+    }catch(err){
+      erroBox.textContent = 'Não foi possível gerar a explicação agora. Tente novamente em instantes.';
+      erroBox.style.display = 'block';
+    }finally{
+      carregando.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener('click', explicar);
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') explicar(); });
+</script>
+</body>
+</html>
